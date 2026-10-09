@@ -1,0 +1,1849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>🔐 Smart Door Lock — Interactive Simulation</title>
+<style>
+:root{
+  --bg:#080c14;
+  --s1:#0d1420;
+  --s2:#111827;
+  --s3:#1c2535;
+  --s4:#253044;
+  --border:rgba(100,140,200,.15);
+  --border2:rgba(100,140,200,.25);
+  --text:#e2e8f4;
+  --text2:#7a8faa;
+  --text3:#4a5f7a;
+  --blue:#3b82f6;
+  --blue2:#60a5fa;
+  --green:#22c55e;
+  --green2:#4ade80;
+  --red:#ef4444;
+  --red2:#f87171;
+  --yellow:#f59e0b;
+  --purple:#8b5cf6;
+  --cyan:#06b6d4;
+  --r:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Segoe UI',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── HEADER ── */
+header{
+  background:linear-gradient(135deg,#0a101c,#0d1628);
+  border-bottom:1px solid var(--border);
+  padding:14px 28px;
+  display:flex;align-items:center;gap:14px;
+  position:sticky;top:0;z-index:200;
+  backdrop-filter:blur(16px);
+}
+.logo{
+  width:42px;height:42px;
+  background:linear-gradient(135deg,#3b82f6,#6d28d9);
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;flex-shrink:0;
+  box-shadow:0 0 20px rgba(59,130,246,.3);
+}
+.header-text h1{font-size:1.1rem;font-weight:700;letter-spacing:.3px}
+.header-text p{font-size:.72rem;color:var(--text2);margin-top:1px}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.pill{
+  padding:5px 12px;border-radius:20px;
+  font-size:.7rem;font-weight:700;border:1px solid;
+  letter-spacing:.8px;
+}
+.pill-green{color:var(--green);border-color:var(--green);background:rgba(34,197,94,.1)}
+.pill-red  {color:var(--red);  border-color:var(--red);  background:rgba(239,68,68,.1)}
+.pill-blue {color:var(--blue2);border-color:var(--blue); background:rgba(59,130,246,.1)}
+.sound-btn{
+  padding:6px 12px;border-radius:8px;
+  background:var(--s3);border:1px solid var(--border2);
+  color:var(--text2);font-size:.75rem;cursor:pointer;
+  transition:all .2s;display:flex;align-items:center;gap:5px;
+}
+.sound-btn:hover{background:var(--s4);color:var(--text)}
+
+/* ── MAIN GRID ── */
+.main{
+  display:grid;
+  grid-template-columns:1fr 370px;
+  gap:20px;
+  padding:20px 28px;
+  max-width:1380px;
+  margin:0 auto;
+}
+
+/* ── PANELS ── */
+.panel{
+  background:var(--s1);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:18px;
+}
+.panel-title{
+  font-size:.68rem;font-weight:700;
+  letter-spacing:1.2px;color:var(--text2);
+  text-transform:uppercase;
+  margin-bottom:14px;
+  display:flex;align-items:center;gap:7px;
+}
+.panel-title .dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--blue);flex-shrink:0;
+  box-shadow:0 0 6px var(--blue);
+}
+
+/* ══════════ HARDWARE SCENE ══════════ */
+.hw-scene{
+  background:radial-gradient(ellipse at 30% 20%,#0f1e35,#070c16);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:0;
+  position:relative;
+  overflow:hidden;
+  min-height:520px;
+  display:flex;
+  flex-direction:column;
+  gap:0;
+}
+.hw-scene::before{
+  content:'';
+  position:absolute;inset:0;
+  background:repeating-linear-gradient(
+    0deg,transparent,transparent 39px,
+    rgba(59,130,246,.04) 40px),
+  repeating-linear-gradient(
+    90deg,transparent,transparent 39px,
+    rgba(59,130,246,.04) 40px);
+  pointer-events:none;
+}
+
+/* ── SCENE HEADER ── */
+.scene-header{
+  padding:14px 20px 0;
+  display:flex;align-items:center;gap:10px;
+  position:relative;z-index:1;
+}
+.scene-title{font-size:.8rem;font-weight:700;color:var(--text2)}
+.scene-badge{
+  padding:3px 10px;border-radius:12px;
+  font-size:.65rem;font-weight:700;
+  margin-left:auto;
+  transition:all .3s;
+}
+.scene-badge.locked  {color:var(--red);background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3)}
+.scene-badge.unlocked{color:var(--green);background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3)}
+
+/* ── COMPONENT STAGE ── */
+.stage{
+  padding:20px;
+  display:flex;
+  gap:24px;
+  flex:1;
+  position:relative;
+  z-index:1;
+}
+
+/* ── DOOR ── */
+.door-area{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:14px;
+  flex:0 0 auto;
+}
+.door-outer{
+  perspective:700px;
+  width:190px;height:260px;
+}
+.door-wrapper{
+  width:100%;height:100%;
+  transform-style:preserve-3d;
+  position:relative;
+}
+.door-frame-svg{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+}
+/* Door itself - opens via rotation */
+.door-3d{
+  position:absolute;
+  top:8px;left:8px;
+  width:174px;height:244px;
+  background:linear-gradient(160deg,#1e2d42,#14203a);
+  border:2px solid #2d4060;
+  border-radius:4px 4px 2px 2px;
+  transform-origin:left center;
+  transform-style:preserve-3d;
+  transition:transform .9s cubic-bezier(.25,.8,.25,1);
+  box-shadow:inset 0 0 30px rgba(0,0,0,.5),2px 0 8px rgba(0,0,0,.4);
+  will-change:transform;
+}
+.door-3d.open{
+  transform:perspective(600px) rotateY(-48deg);
+}
+.door-3d.closing{
+  transform:perspective(600px) rotateY(0deg);
+}
+/* Door panels */
+.door-panel-top,
+.door-panel-bot{
+  position:absolute;
+  left:12px;right:12px;
+  border:1.5px solid #2d4a6a;
+  border-radius:3px;
+  background:linear-gradient(135deg,rgba(30,50,80,.4),rgba(10,20,40,.6));
+}
+.door-panel-top{top:14px;height:90px}
+.door-panel-bot{top:118px;height:110px}
+/* Door number / label */
+.door-label{
+  position:absolute;
+  bottom:18px;left:50%;
+  transform:translateX(-50%);
+  font-size:.55rem;letter-spacing:2px;
+  color:#2d4a6a;font-weight:700;
+}
+/* Lock assembly */
+.lock-assembly{
+  position:absolute;
+  right:16px;top:45%;
+  transform:translateY(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+}
+.shackle{
+  width:16px;height:13px;
+  border:3px solid #556;
+  border-bottom:none;
+  border-radius:8px 8px 0 0;
+  transition:transform .4s ease,border-color .4s;
+  transform-origin:bottom center;
+}
+.shackle.open{
+  transform:translateY(-9px);
+  border-color:var(--green);
+}
+.lock-body-hw{
+  width:22px;height:24px;
+  background:linear-gradient(180deg,#3a4a5a,#222d3a);
+  border-radius:4px;
+  border:1.5px solid #4a5a6a;
+  display:flex;align-items:center;justify-content:center;
+}
+.keyhole{
+  width:6px;height:7px;
+  background:#0a0e14;
+  clip-path:circle(40% at 50% 35%) polygon(30% 35%,70% 35%,60% 100%,40% 100%);
+}
+/* Door knob */
+.door-knob-hw{
+  position:absolute;
+  left:18px;top:47%;
+  width:11px;height:11px;
+  border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#c8a44a,#7a5a10);
+  box-shadow:0 2px 5px rgba(0,0,0,.5);
+}
+/* Door glow on unlock */
+.door-glow{
+  position:absolute;inset:-2px;
+  border-radius:5px;
+  opacity:0;
+  transition:opacity .4s;
+  pointer-events:none;
+  box-shadow:0 0 0 2px var(--green),0 0 20px var(--green);
+}
+.door-3d.open .door-glow{opacity:1}
+
+/* Door status label */
+.door-status{
+  font-size:.72rem;font-weight:800;
+  letter-spacing:2px;text-transform:uppercase;
+  padding:5px 16px;border-radius:16px;
+  transition:all .3s;
+}
+.door-status.locked  {color:var(--red);background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25)}
+.door-status.unlocked{color:var(--green);background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25)}
+
+/* Auto-lock countdown ring */
+.countdown-ring{
+  position:relative;width:54px;height:54px;
+  display:none;
+}
+.countdown-ring.active{display:block}
+.countdown-ring svg{transform:rotate(-90deg)}
+.ring-track{fill:none;stroke:var(--s3);stroke-width:4}
+.ring-fill{
+  fill:none;stroke:var(--green);stroke-width:4;
+  stroke-dasharray:138.2;
+  stroke-dashoffset:0;
+  stroke-linecap:round;
+  transition:stroke-dashoffset 1s linear;
+}
+.ring-label{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.75rem;font-weight:700;color:var(--green);
+}
+
+/* ── COMPONENTS COLUMN ── */
+.comp-col{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  flex:1;
+}
+
+/* ── LCD ── */
+.lcd-outer{
+  background:#050e08;
+  border:3px solid #0e2010;
+  border-radius:8px;
+  padding:10px 12px;
+  box-shadow:0 0 30px rgba(0,100,0,.15),inset 0 2px 8px rgba(0,0,0,.7);
+  position:relative;
+}
+.lcd-outer::before{
+  content:'LCD 16×2 Display';
+  position:absolute;top:-9px;left:10px;
+  font-size:.55rem;color:#1a4020;background:#050e08;padding:0 4px;
+  letter-spacing:.5px;
+}
+.lcd-screen{
+  font-family:'Courier New',monospace;
+  line-height:2.2;
+}
+.lcd-row{
+  display:flex;gap:0;
+  height:22px;
+  overflow:hidden;
+}
+.lcd-char{
+  display:inline-flex;
+  align-items:center;justify-content:center;
+  width:10.5px;height:18px;
+  font-size:.72rem;
+  color:#00ff5a;
+  text-shadow:0 0 6px rgba(0,255,90,.7);
+  position:relative;
+  transition:color .1s;
+}
+.lcd-char.cursor::after{
+  content:'';
+  position:absolute;
+  bottom:1px;left:0;right:0;
+  height:2px;
+  background:#00ff5a;
+  animation:blink .8s step-end infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.lcd-scanline{
+  position:absolute;inset:0;
+  background:repeating-linear-gradient(
+    0deg,rgba(0,0,0,.1),rgba(0,0,0,.1) 1px,transparent 1px,transparent 4px);
+  pointer-events:none;
+  border-radius:5px;
+}
+.lcd-glow{
+  position:absolute;inset:-1px;
+  border-radius:9px;
+  box-shadow:0 0 0 1px #0e3018,0 0 12px rgba(0,180,60,.15);
+  pointer-events:none;
+}
+
+/* ── SERVO ── */
+.servo-outer{
+  background:var(--s2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:12px;
+  display:flex;gap:12px;align-items:center;
+}
+.servo-body-hw{
+  flex-shrink:0;
+  width:60px;height:45px;
+  background:linear-gradient(180deg,#4a5568,#2d3748);
+  border-radius:6px;
+  border:1.5px solid #5a6578;
+  position:relative;
+  display:flex;align-items:center;justify-content:center;
+}
+.servo-shaft-hw{
+  width:14px;height:14px;
+  border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#a0b0c0,#4a5568);
+  border:1.5px solid #6a7888;
+  position:relative;
+}
+.servo-arm-hw{
+  position:absolute;
+  top:50%;left:50%;
+  width:22px;height:3px;
+  background:#e2e8f0;
+  border-radius:2px;
+  transform-origin:left center;
+  transform:translate(0,-50%) rotate(0deg);
+  transition:transform .8s cubic-bezier(.34,1.56,.64,1);
+}
+.servo-dial{
+  flex:1;
+}
+.dial-track{
+  width:80px;height:80px;
+  position:relative;margin:0 auto;
+}
+.dial-track svg{overflow:visible}
+.dial-arc-bg{fill:none;stroke:var(--s3);stroke-width:6;stroke-linecap:round}
+.dial-arc-fill{
+  fill:none;stroke:var(--blue);stroke-width:6;stroke-linecap:round;
+  stroke-dasharray:188;
+  stroke-dashoffset:188;
+  transition:stroke-dashoffset .8s cubic-bezier(.34,1.56,.64,1),stroke .4s;
+}
+.dial-needle{
+  position:absolute;
+  top:50%;left:50%;
+  width:30px;height:2px;
+  background:var(--blue);
+  border-radius:1px;
+  transform-origin:left center;
+  transform:translate(0,-50%) rotate(-90deg);
+  transition:transform .8s cubic-bezier(.34,1.56,.64,1);
+}
+.dial-label{
+  text-align:center;
+  font-size:.65rem;color:var(--text2);
+  margin-top:4px;
+}
+.dial-deg{
+  font-size:1.1rem;font-weight:700;
+  color:var(--blue2);display:block;
+  transition:color .4s;
+}
+
+/* ── LED ROW ── */
+.led-row-hw{
+  display:flex;gap:12px;
+}
+.led-comp{
+  flex:1;background:var(--s2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:10px;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+}
+.led-bulb{
+  width:28px;height:28px;
+  border-radius:50%;
+  border:2px solid rgba(255,255,255,.1);
+  position:relative;
+  transition:all .25s;
+}
+.led-bulb::after{
+  content:'';
+  position:absolute;
+  top:5px;left:5px;
+  width:8px;height:8px;
+  border-radius:50%;
+  background:rgba(255,255,255,.45);
+  transition:all .25s;
+}
+.led-off{background:#111}
+.led-green-off{background:#0a1a0a;border-color:#1a3a1a}
+.led-red-off  {background:#1a0a0a;border-color:#3a1a1a}
+.led-green-on{
+  background:radial-gradient(circle at 38% 35%,#7eff9a,var(--green));
+  box-shadow:0 0 16px var(--green),0 0 40px rgba(34,197,94,.4);
+  border-color:var(--green2);
+}
+.led-red-on{
+  background:radial-gradient(circle at 38% 35%,#ff9999,var(--red));
+  box-shadow:0 0 16px var(--red),0 0 40px rgba(239,68,68,.4);
+  border-color:var(--red2);
+}
+.led-label-hw{font-size:.62rem;color:var(--text3);letter-spacing:.5px}
+
+/* ── BUZZER ── */
+.buzzer-comp{
+  background:var(--s2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:10px;
+  display:flex;align-items:center;gap:10px;
+}
+.buzzer-hw{
+  width:36px;height:36px;
+  flex-shrink:0;
+  border-radius:50%;
+  background:radial-gradient(circle at 40% 35%,#5a6578,#2d3748);
+  border:2px solid #4a5568;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+  transition:all .15s;
+}
+.buzzer-hw.buzz{
+  animation:buzzAnim .1s linear infinite;
+  box-shadow:0 0 0 4px rgba(239,68,68,.2),0 0 16px rgba(239,68,68,.3);
+}
+@keyframes buzzAnim{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.08)}
+}
+.buzzer-rings{
+  position:absolute;inset:-8px;
+  border-radius:50%;
+  border:2px solid rgba(239,68,68,.4);
+  opacity:0;
+  animation:none;
+}
+.buzzer-hw.buzz .buzzer-rings{
+  animation:ringPulse .3s ease-out infinite;
+  opacity:1;
+}
+@keyframes ringPulse{
+  0%{transform:scale(1);opacity:.6}
+  100%{transform:scale(1.5);opacity:0}
+}
+.buzz-waves{
+  display:flex;gap:3px;align-items:center;
+}
+.wave{
+  width:3px;border-radius:2px;
+  background:var(--text3);
+  transition:background .2s,height .2s;
+}
+.buzzer-hw.buzz ~ .buzz-waves .wave{background:var(--red2)}
+.w1{height:6px}.w2{height:10px}.w3{height:14px}.w4{height:10px}.w5{height:6px}
+.buzzer-hw.buzz ~ .buzz-waves .w1{animation:waveAnim .15s ease infinite 0s}
+.buzzer-hw.buzz ~ .buzz-waves .w2{animation:waveAnim .15s ease infinite .03s}
+.buzzer-hw.buzz ~ .buzz-waves .w3{animation:waveAnim .15s ease infinite .06s}
+.buzzer-hw.buzz ~ .buzz-waves .w4{animation:waveAnim .15s ease infinite .03s}
+.buzzer-hw.buzz ~ .buzz-waves .w5{animation:waveAnim .15s ease infinite 0s}
+@keyframes waveAnim{
+  0%,100%{transform:scaleY(1)}
+  50%{transform:scaleY(1.6)}
+}
+.buzzer-info{font-size:.65rem;color:var(--text3)}
+
+/* ── ARDUINO BOARD ── */
+.arduino{
+  background:linear-gradient(160deg,#062212,#041a0c);
+  border:2px solid #0a3018;
+  border-radius:8px;
+  padding:10px 14px;
+  display:flex;align-items:center;gap:12px;
+}
+.ard-chip{
+  width:54px;height:32px;
+  background:#0d4020;
+  border-radius:4px;
+  border:1px solid #1a6030;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+  flex-shrink:0;
+}
+.ard-pins-l,.ard-pins-r{
+  position:absolute;top:4px;bottom:4px;
+  display:flex;flex-direction:column;justify-content:space-evenly;
+}
+.ard-pins-l{left:-5px}
+.ard-pins-r{right:-5px}
+.ard-pin{
+  width:5px;height:3px;
+  background:#90b890;
+  border-radius:1px;
+}
+.ard-text{font-size:.42rem;color:#60c080;font-weight:700;letter-spacing:.5px;text-align:center;line-height:1.4}
+.ard-info{font-size:.72rem}
+.ard-info strong{font-size:.78rem;display:block;color:#60c080}
+.ard-info span{color:var(--text3)}
+.ard-status{display:flex;align-items:center;gap:5px;margin-top:3px}
+.ard-led{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--green);
+  box-shadow:0 0 6px var(--green);
+  animation:ardBlink 2s ease-in-out infinite;
+}
+@keyframes ardBlink{
+  0%,100%{opacity:1;box-shadow:0 0 6px var(--green)}
+  50%{opacity:.3;box-shadow:none}
+}
+.ard-status span{font-size:.62rem;color:#4a8a5a}
+
+/* ── SIGNAL FLOW ── */
+.signal-flow{
+  background:var(--s1);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:14px;
+  margin-top:16px;
+}
+.flow-title{font-size:.68rem;font-weight:700;letter-spacing:1.2px;color:var(--text2);text-transform:uppercase;margin-bottom:10px}
+.flow-steps{
+  display:flex;align-items:center;gap:0;
+  overflow-x:auto;
+  padding-bottom:4px;
+}
+.flow-step{
+  display:flex;flex-direction:column;align-items:center;
+  gap:4px;
+  min-width:70px;
+  opacity:.3;
+  transition:opacity .3s,transform .2s;
+}
+.flow-step.active{
+  opacity:1;
+  transform:scale(1.05);
+}
+.flow-icon{
+  width:38px;height:38px;
+  border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;
+  background:var(--s3);
+  border:1px solid var(--border);
+  transition:all .3s;
+}
+.flow-step.active .flow-icon{
+  background:rgba(59,130,246,.15);
+  border-color:var(--blue);
+  box-shadow:0 0 12px rgba(59,130,246,.2);
+}
+.flow-step.success .flow-icon{
+  background:rgba(34,197,94,.15);
+  border-color:var(--green);
+  box-shadow:0 0 12px rgba(34,197,94,.2);
+}
+.flow-step.error .flow-icon{
+  background:rgba(239,68,68,.15);
+  border-color:var(--red);
+  box-shadow:0 0 12px rgba(239,68,68,.2);
+}
+.flow-step-label{
+  font-size:.6rem;color:var(--text3);
+  text-align:center;line-height:1.3;
+}
+.flow-arrow{
+  font-size:.85rem;color:var(--text3);
+  flex-shrink:0;padding:0 3px;
+  margin-top:-16px;
+  transition:color .3s;
+}
+.flow-arrow.active{color:var(--blue)}
+.flow-arrow.success{color:var(--green)}
+.flow-arrow.error{color:var(--red)}
+
+/* ══════════ RIGHT PANEL ══════════ */
+.right-col{
+  display:flex;flex-direction:column;gap:14px;
+}
+
+/* ── DASHBOARD ── */
+.dash-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+}
+.dash-card{
+  background:var(--s2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:10px 12px;
+  transition:border-color .3s;
+}
+.dash-lbl{font-size:.6rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}
+.dash-val{font-size:.95rem;font-weight:700;transition:color .3s}
+
+/* ── PASSWORD DISPLAY ── */
+.pw-box{
+  background:#050c18;
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:12px 16px;
+  font-family:'Courier New',monospace;
+  font-size:1.8rem;
+  letter-spacing:10px;
+  color:var(--blue2);
+  min-height:56px;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+  overflow:hidden;
+}
+.pw-box::after{
+  content:'';
+  position:absolute;bottom:0;left:0;right:0;
+  height:2px;
+  background:linear-gradient(90deg,transparent,var(--blue),transparent);
+  opacity:.5;
+}
+.pw-placeholder{font-size:.85rem;letter-spacing:3px;color:var(--text3);font-family:inherit}
+.pw-dots{display:flex;gap:8px;align-items:center;justify-content:center}
+.pw-dot{
+  width:12px;height:12px;
+  border-radius:50%;
+  background:var(--blue);
+  box-shadow:0 0 8px var(--blue);
+  animation:dotPop .2s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes dotPop{
+  0%{transform:scale(0)}100%{transform:scale(1)}
+}
+
+/* ── KEYPAD ── */
+.keypad-wrap{
+  background:linear-gradient(160deg,#0f1a28,#080e1a);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:14px;
+}
+.keypad-title{
+  font-size:.62rem;color:var(--text3);letter-spacing:1px;
+  text-transform:uppercase;margin-bottom:10px;
+  display:flex;align-items:center;gap:6px;
+}
+.keypad-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:7px;
+}
+.key{
+  aspect-ratio:1;
+  min-height:46px;
+  border-radius:8px;
+  border:1px solid #1e2e42;
+  border-bottom:3px solid #0a111e;
+  background:linear-gradient(180deg,#1a2840,#111e30);
+  color:var(--text);
+  font-size:.95rem;font-weight:600;
+  cursor:pointer;
+  transition:all .1s;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+  overflow:hidden;
+  user-select:none;
+}
+.key::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:1px;
+  background:rgba(255,255,255,.07);
+}
+.key:hover:not(:disabled){
+  background:linear-gradient(180deg,#243650,#18283e);
+  border-color:var(--blue);
+}
+.key:active:not(:disabled),.key.pressed{
+  transform:translateY(2px);
+  border-bottom-width:1px;
+  background:linear-gradient(180deg,#0f1e30,#0a1520);
+}
+.key-digit{color:var(--text)}
+.key-alpha{color:var(--cyan)}
+.key-star{color:var(--red)}
+.key-hash{color:var(--green)}
+.key:disabled{opacity:.35;cursor:not-allowed}
+/* Ripple */
+.ripple{
+  position:absolute;
+  border-radius:50%;
+  background:rgba(255,255,255,.2);
+  animation:rippleAnim .4s ease-out forwards;
+  pointer-events:none;
+  transform:scale(0);
+}
+@keyframes rippleAnim{
+  to{transform:scale(3);opacity:0}
+}
+
+/* ── ACTION BUTTONS ── */
+.action-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:7px;
+  margin-top:8px;
+}
+.btn{
+  padding:9px 12px;
+  border-radius:8px;border:1px solid;
+  font-size:.75rem;font-weight:700;
+  cursor:pointer;transition:all .2s;
+  letter-spacing:.5px;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+}
+.btn:hover:not(:disabled){filter:brightness(1.15);transform:translateY(-1px)}
+.btn:active:not(:disabled){transform:translateY(0)}
+.btn:disabled{opacity:.3;cursor:not-allowed}
+.btn-g{background:rgba(34,197,94,.1);color:var(--green);border-color:rgba(34,197,94,.3)}
+.btn-r{background:rgba(239,68,68,.1);color:var(--red);  border-color:rgba(239,68,68,.3)}
+.btn-b{background:rgba(59,130,246,.1);color:var(--blue2);border-color:rgba(59,130,246,.3)}
+.btn-y{background:rgba(245,158,11,.1);color:var(--yellow);border-color:rgba(245,158,11,.3)}
+
+/* ── ACTIVITY LOG ── */
+.log-box{
+  background:#030508;
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:10px;
+  max-height:160px;
+  overflow-y:auto;
+  font-family:'Courier New',monospace;
+  font-size:.68rem;
+}
+.log-box::-webkit-scrollbar{width:3px}
+.log-box::-webkit-scrollbar-track{background:transparent}
+.log-box::-webkit-scrollbar-thumb{background:#1e2e42;border-radius:2px}
+.log-entry{
+  display:flex;gap:7px;
+  padding:2px 0;
+  border-bottom:1px solid rgba(255,255,255,.03);
+  line-height:1.45;
+  animation:logSlide .2s ease;
+}
+@keyframes logSlide{
+  from{opacity:0;transform:translateY(-4px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.lt{color:#1e3a5a;flex-shrink:0}
+.lm-s{color:var(--green)}
+.lm-e{color:var(--red)}
+.lm-w{color:var(--yellow)}
+.lm-i{color:var(--text2)}
+
+/* ── MODAL ── */
+.modal-bg{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.75);
+  backdrop-filter:blur(8px);
+  z-index:500;
+  align-items:center;justify-content:center;
+}
+.modal-bg.show{display:flex}
+.modal{
+  background:var(--s1);
+  border:1px solid var(--border2);
+  border-radius:14px;
+  padding:26px;
+  width:340px;
+  max-width:95vw;
+  box-shadow:0 24px 60px rgba(0,0,0,.7);
+}
+.modal h3{font-size:1rem;margin-bottom:4px}
+.modal-sub{font-size:.75rem;color:var(--text2);margin-bottom:16px}
+.modal-step-lbl{font-size:.65rem;color:var(--blue2);letter-spacing:1px;margin-bottom:10px}
+.modal-err{color:var(--red2);font-size:.72rem;min-height:16px;margin-bottom:6px}
+.modal-input-lbl{font-size:.7rem;color:var(--text2);margin-bottom:4px;display:block}
+.modal-input{
+  width:100%;padding:9px 12px;
+  background:#030508;border:1px solid #1e2e42;
+  border-radius:7px;color:var(--text);
+  font-size:.9rem;letter-spacing:5px;
+  outline:none;margin-bottom:10px;
+  transition:border-color .2s;
+}
+.modal-input:focus{border-color:var(--blue)}
+.modal-actions{display:flex;gap:8px;margin-top:4px}
+.modal-actions .btn{flex:1}
+.modal-success{
+  text-align:center;padding:14px 0;
+}
+.modal-success .check{font-size:2.5rem;margin-bottom:8px}
+.modal-success h4{color:var(--green);font-size:1rem;margin-bottom:4px}
+.modal-success p{font-size:.78rem;color:var(--text2)}
+
+/* ── LOCKOUT BAR ── */
+.lockout-bar{
+  height:3px;background:var(--s3);
+  border-radius:2px;overflow:hidden;
+  margin-top:8px;display:none;
+}
+.lockout-fill{
+  height:100%;background:var(--red);
+  border-radius:2px;
+  transition:width 1s linear;
+}
+
+/* ── EFFECTS ── */
+/* Shake */
+@keyframes shakeX{
+  0%,100%{transform:translateX(0)}
+  15%,45%,75%{transform:translateX(-7px)}
+  30%,60%,90%{transform:translateX(7px)}
+}
+.shake{animation:shakeX .5s ease}
+/* Success flash */
+@keyframes successFlash{
+  0%,100%{background:rgba(34,197,94,0)}
+  50%{background:rgba(34,197,94,.08)}
+}
+.success-flash{animation:successFlash .6s ease 2}
+/* Particles */
+.particle-container{
+  position:fixed;inset:0;pointer-events:none;z-index:999;
+}
+.particle{
+  position:absolute;
+  width:8px;height:8px;
+  border-radius:50%;
+  animation:particleFly 1s ease-out forwards;
+}
+@keyframes particleFly{
+  0%{transform:translate(0,0) scale(1);opacity:1}
+  100%{transform:translate(var(--tx),var(--ty)) scale(0);opacity:0}
+}
+
+/* Responsive */
+@media(max-width:900px){
+  .main{grid-template-columns:1fr;padding:14px}
+  .right-col{order:-1}
+  header{padding:12px 14px}
+}
+</style>
+</head>
+<body>
+
+<!-- PARTICLE CONTAINER -->
+<div class="particle-container" id="particles"></div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">🔐</div>
+  <div class="header-text">
+    <h1>Password Protected Door Lock System</h1>
+    <p>Full Interactive Hardware Simulation &nbsp;·&nbsp; Arduino Uno &nbsp;·&nbsp; B.Tech CSE / AI-ML</p>
+  </div>
+  <div class="header-right">
+    <button class="sound-btn" id="soundToggle" onclick="toggleSound()">🔊 Sound ON</button>
+    <span class="pill pill-green" id="headerBadge">🔒 LOCKED</span>
+  </div>
+</header>
+
+<!-- MAIN GRID -->
+<div class="main">
+
+  <!-- ═══ LEFT: HARDWARE SCENE ═══ -->
+  <div style="display:flex;flex-direction:column;gap:14px">
+
+    <!-- Scene -->
+    <div class="hw-scene">
+      <div class="scene-header">
+        <span style="font-size:.55rem;letter-spacing:1px;color:var(--text3);text-transform:uppercase">Hardware Simulation</span>
+        <div style="margin-left:8px;width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:ardBlink 1.5s infinite"></div>
+        <span class="scene-badge locked" id="sceneBadge">🔒 DOOR LOCKED</span>
+      </div>
+
+      <div class="stage">
+        <!-- Door -->
+        <div class="door-area">
+          <div class="door-outer">
+            <!-- Frame SVG -->
+            <svg class="door-frame-svg" viewBox="0 0 190 260">
+              <!-- Outer frame -->
+              <rect x="2" y="2" width="186" height="256" rx="6" fill="none" stroke="#2d4060" stroke-width="5"/>
+              <!-- Floor -->
+              <line x1="0" y1="258" x2="190" y2="258" stroke="#1a2a3a" stroke-width="4"/>
+              <!-- Hinge top -->
+              <rect x="3" y="20" width="6" height="16" rx="2" fill="#3a5070"/>
+              <!-- Hinge bot -->
+              <rect x="3" y="200" width="6" height="16" rx="2" fill="#3a5070"/>
+            </svg>
+            <!-- Door -->
+            <div class="door-3d" id="door3d">
+              <div class="door-glow"></div>
+              <div class="door-panel-top"></div>
+              <div class="door-panel-bot"></div>
+              <div class="door-knob-hw"></div>
+              <div class="lock-assembly">
+                <div class="shackle" id="shackle"></div>
+                <div class="lock-body-hw">
+                  <div class="keyhole"></div>
+                </div>
+              </div>
+              <div class="door-label">ROOM 101</div>
+            </div>
+          </div>
+
+          <div class="door-status locked" id="doorStatus">🔒 LOCKED</div>
+
+          <!-- Auto-lock ring -->
+          <div class="countdown-ring" id="countdownRing">
+            <svg viewBox="0 0 54 54" width="54" height="54">
+              <circle class="ring-track" cx="27" cy="27" r="22"/>
+              <circle class="ring-fill" cx="27" cy="27" r="22" id="ringFill"/>
+            </svg>
+            <div class="ring-label" id="ringLabel">5</div>
+          </div>
+        </div>
+
+        <!-- Components column -->
+        <div class="comp-col">
+
+          <!-- LCD -->
+          <div class="lcd-outer">
+            <div class="lcd-screen">
+              <div class="lcd-row" id="lcdRow0"></div>
+              <div class="lcd-row" id="lcdRow1"></div>
+            </div>
+            <div class="lcd-scanline"></div>
+            <div class="lcd-glow"></div>
+          </div>
+
+          <!-- Servo -->
+          <div class="servo-outer">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+              <div class="servo-body-hw">
+                <div class="servo-shaft-hw">
+                  <div class="servo-arm-hw" id="servoArm"></div>
+                </div>
+              </div>
+              <span style="font-size:.6rem;color:var(--text3);letter-spacing:.5px">SERVO MOTOR</span>
+            </div>
+            <div class="servo-dial">
+              <div class="dial-track">
+                <svg viewBox="0 0 80 80" width="80" height="80">
+                  <path class="dial-arc-bg" d="M10,60 A34,34 0 1,1 70,60" stroke-dasharray="none"/>
+                  <path class="dial-arc-fill" id="dialArc" d="M10,60 A34,34 0 1,1 70,60"/>
+                </svg>
+                <div class="dial-needle" id="dialNeedle"></div>
+              </div>
+              <div class="dial-label">
+                <span class="dial-deg" id="dialDeg">0°</span>
+                <span style="font-size:.6rem;color:var(--text3)">Position</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- LEDs -->
+          <div class="led-row-hw">
+            <div class="led-comp">
+              <div class="led-bulb led-green-off" id="ledGreen"></div>
+              <div class="led-label-hw">GREEN LED</div>
+              <div style="font-size:.6rem;color:var(--text3)">D10 · 220Ω</div>
+            </div>
+            <div class="led-comp">
+              <div class="led-bulb led-red-off" id="ledRed"></div>
+              <div class="led-label-hw">RED LED</div>
+              <div style="font-size:.6rem;color:var(--text3)">D11 · 220Ω</div>
+            </div>
+            <div class="buzzer-comp" style="flex:1.2">
+              <div class="buzzer-hw" id="buzzerHw">
+                <div class="buzzer-rings"></div>
+                <span style="font-size:.75rem">⬤</span>
+              </div>
+              <div class="buzz-waves">
+                <div class="wave w1"></div>
+                <div class="wave w2"></div>
+                <div class="wave w3"></div>
+                <div class="wave w4"></div>
+                <div class="wave w5"></div>
+              </div>
+              <div class="buzzer-info">
+                <div style="font-size:.65rem;color:var(--text2);font-weight:600">BUZZER</div>
+                <div>D12 · Active</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Arduino -->
+          <div class="arduino">
+            <div class="ard-chip">
+              <div class="ard-pins-l">
+                <div class="ard-pin"></div><div class="ard-pin"></div>
+                <div class="ard-pin"></div><div class="ard-pin"></div>
+              </div>
+              <div class="ard-pins-r">
+                <div class="ard-pin"></div><div class="ard-pin"></div>
+                <div class="ard-pin"></div><div class="ard-pin"></div>
+              </div>
+              <div class="ard-text">ARDUINO<br/>UNO</div>
+            </div>
+            <div class="ard-info">
+              <strong>ATmega328P</strong>
+              <span>16MHz · 32KB Flash · 14 Digital I/O</span>
+              <div class="ard-status">
+                <div class="ard-led"></div>
+                <span>RUNNING — loop()</span>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /comp-col -->
+      </div><!-- /stage -->
+    </div><!-- /hw-scene -->
+
+    <!-- SIGNAL FLOW -->
+    <div class="signal-flow">
+      <div class="flow-title">⚡ Signal Flow — Real-Time Hardware State</div>
+      <div class="flow-steps" id="flowSteps">
+        <div class="flow-step active" id="fs0">
+          <div class="flow-icon">⌨️</div>
+          <div class="flow-step-label">Key<br/>Press</div>
+        </div>
+        <div class="flow-arrow" id="fa0">→</div>
+        <div class="flow-step" id="fs1">
+          <div class="flow-icon">📟</div>
+          <div class="flow-step-label">Keypad<br/>Scan</div>
+        </div>
+        <div class="flow-arrow" id="fa1">→</div>
+        <div class="flow-step" id="fs2">
+          <div class="flow-icon">🖥️</div>
+          <div class="flow-step-label">Arduino<br/>Read</div>
+        </div>
+        <div class="flow-arrow" id="fa2">→</div>
+        <div class="flow-step" id="fs3">
+          <div class="flow-icon">🔍</div>
+          <div class="flow-step-label">Password<br/>Check</div>
+        </div>
+        <div class="flow-arrow" id="fa3">→</div>
+        <div class="flow-step" id="fs4">
+          <div class="flow-icon">⚙️</div>
+          <div class="flow-step-label">Actuate<br/>Output</div>
+        </div>
+        <div class="flow-arrow" id="fa4">→</div>
+        <div class="flow-step" id="fs5">
+          <div class="flow-icon">🚪</div>
+          <div class="flow-step-label">Door<br/>State</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /left col -->
+
+  <!-- ═══ RIGHT: CONTROL PANEL ═══ -->
+  <div class="right-col">
+
+    <!-- Dashboard -->
+    <div class="panel">
+      <div class="panel-title"><div class="dot"></div>LIVE DASHBOARD</div>
+      <div class="dash-grid">
+        <div class="dash-card">
+          <div class="dash-lbl">Door Status</div>
+          <div class="dash-val" id="dDoor" style="color:var(--red)">LOCKED</div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-lbl">Security</div>
+          <div class="dash-val" id="dSecurity" style="color:var(--green)">SECURE</div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-lbl">Failed Attempts</div>
+          <div class="dash-val" id="dAttempts" style="color:var(--blue2)">0 / 3</div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-lbl">Password</div>
+          <div class="dash-val" id="dPassword" style="color:var(--text2)">••••</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;font-size:.68rem;color:var(--text3)">
+        Last event: <span id="dLastEvent" style="color:var(--text2)">System initialized</span>
+      </div>
+      <div class="lockout-bar" id="lockoutBar">
+        <div class="lockout-fill" id="lockoutFill" style="width:100%"></div>
+      </div>
+    </div>
+
+    <!-- Password entry -->
+    <div class="panel">
+      <div class="panel-title"><div class="dot" style="background:var(--blue2)"></div>PASSWORD ENTRY</div>
+
+      <!-- PW Display -->
+      <div class="pw-box" id="pwBox">
+        <span class="pw-placeholder" id="pwPlaceholder">ENTER CODE</span>
+        <div class="pw-dots" id="pwDots" style="display:none"></div>
+      </div>
+
+      <!-- Keypad -->
+      <div class="keypad-wrap" style="margin-top:10px">
+        <div class="keypad-title">⌨ 4×4 Matrix Keypad</div>
+        <div class="keypad-grid" id="keypadGrid">
+          <button class="key key-digit" data-k="1">1</button>
+          <button class="key key-digit" data-k="2">2</button>
+          <button class="key key-digit" data-k="3">3</button>
+          <button class="key key-alpha" data-k="A">A</button>
+          <button class="key key-digit" data-k="4">4</button>
+          <button class="key key-digit" data-k="5">5</button>
+          <button class="key key-digit" data-k="6">6</button>
+          <button class="key key-alpha" data-k="B">B</button>
+          <button class="key key-digit" data-k="7">7</button>
+          <button class="key key-digit" data-k="8">8</button>
+          <button class="key key-digit" data-k="9">9</button>
+          <button class="key key-alpha" data-k="C">C</button>
+          <button class="key key-star"  data-k="*">✕</button>
+          <button class="key key-digit" data-k="0">0</button>
+          <button class="key key-hash"  data-k="#">#</button>
+          <button class="key key-alpha" data-k="D">D</button>
+        </div>
+        <div class="action-grid">
+          <button class="btn btn-r" id="btnClear">✕ Clear</button>
+          <button class="btn btn-g" id="btnSubmit"># Submit</button>
+          <button class="btn btn-y" id="btnReset">↺ Reset System</button>
+          <button class="btn btn-b" id="btnChangePw">🔑 Change PW</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity Log -->
+    <div class="panel">
+      <div class="panel-title"><div class="dot" style="background:var(--purple)"></div>ACTIVITY LOG</div>
+      <div class="log-box" id="logBox"></div>
+    </div>
+
+  </div><!-- /right-col -->
+</div><!-- /main -->
+
+<!-- CHANGE PW MODAL -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3>🔑 Change Password</h3>
+    <div class="modal-sub">3-step secure password change</div>
+    <div class="modal-step-lbl" id="mStepLbl">STEP 1 — VERIFY CURRENT PASSWORD</div>
+    <div class="modal-err" id="mErr"></div>
+    <div id="mS1">
+      <label class="modal-input-lbl">Current Password</label>
+      <input type="password" class="modal-input" id="mCurr" maxlength="12" placeholder="••••"/>
+    </div>
+    <div id="mS2" style="display:none">
+      <label class="modal-input-lbl">New Password (min 4 digits)</label>
+      <input type="password" class="modal-input" id="mNew" maxlength="12" placeholder="••••"/>
+      <label class="modal-input-lbl">Confirm New Password</label>
+      <input type="password" class="modal-input" id="mConf" maxlength="12" placeholder="••••"/>
+    </div>
+    <div id="mS3" style="display:none">
+      <div class="modal-success">
+        <div class="check">✅</div>
+        <h4>Password Updated!</h4>
+        <p>Your new password is saved to localStorage.</p>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-y" id="mCancel" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-b" id="mNext" onclick="modalNext()">Next →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+// ══════════════════════════════════════════════════
+//  CONSTANTS
+// ══════════════════════════════════════════════════
+const MAX_FAIL    = 3;
+const LOCKOUT_S   = 15;
+const AUTO_LOCK_S = 5;
+const DEFAULT_PW  = '1234';
+
+// ══════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════
+let pw           = localStorage.getItem('dlPW') || DEFAULT_PW;
+let buf          = '';
+let fails        = 0;
+let doorOpen     = false;
+let lockedOut    = false;
+let soundOn      = true;
+let lockTimer    = null;
+let autoLockT    = null;
+let buzzerT      = null;
+let lockoutInterval = null;
+let lockoutLeft  = 0;
+let modalStage   = 1;
+let audioCtx     = null;
+
+// ══════════════════════════════════════════════════
+//  WEB AUDIO
+// ══════════════════════════════════════════════════
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+function beep(freq, dur, type='sine', vol=0.3, delay=0) {
+  if (!soundOn) return;
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+    gain.gain.setValueAtTime(vol, ctx.currentTime + delay);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + dur);
+    osc.start(ctx.currentTime + delay);
+    osc.stop(ctx.currentTime + delay + dur + 0.05);
+  } catch(e){}
+}
+function playKeyClick() { beep(1200, 0.04, 'square', 0.08); }
+function playSuccess() {
+  beep(784, 0.12, 'sine', 0.25, 0);
+  beep(988, 0.12, 'sine', 0.25, 0.13);
+  beep(1175,0.18, 'sine', 0.25, 0.26);
+}
+function playDeny() {
+  beep(220, 0.15, 'sawtooth', 0.3, 0);
+  beep(180, 0.2,  'sawtooth', 0.3, 0.16);
+}
+function playAlarm() {
+  for(let i=0;i<6;i++) beep(1800 + (i%2)*400, 0.12, 'square', 0.35, i*0.15);
+}
+function playLockClick() {
+  beep(400, 0.04, 'square', 0.2);
+  beep(300, 0.06, 'square', 0.2, 0.05);
+}
+
+// ══════════════════════════════════════════════════
+//  LCD ENGINE — character-by-character typing
+// ══════════════════════════════════════════════════
+const LCD_COLS = 16;
+let lcdContent = ['                ', '                '];
+let lcdTyping  = [null, null];
+
+function lcdRender() {
+  [0,1].forEach(r => {
+    const row = document.getElementById('lcdRow'+r);
+    row.innerHTML = '';
+    const str = (lcdContent[r] + '                ').substring(0, LCD_COLS);
+    for(let c=0;c<LCD_COLS;c++) {
+      const span = document.createElement('span');
+      span.className = 'lcd-char';
+      span.textContent = str[c] === ' ' ? '\u00A0' : str[c];
+      row.appendChild(span);
+    }
+  });
+}
+
+function lcdSet(row, text, instant=false) {
+  const padded = (text + '                ').substring(0, LCD_COLS);
+  if (instant || padded === lcdContent[row]) {
+    lcdContent[row] = padded;
+    lcdRender();
+    return Promise.resolve();
+  }
+  return new Promise(resolve => {
+    if (lcdTyping[row]) clearInterval(lcdTyping[row]);
+    let i = 0;
+    // First blank the row
+    lcdContent[row] = '                ';
+    lcdRender();
+    lcdTyping[row] = setInterval(() => {
+      lcdContent[row] = padded.substring(0,i+1) + ' '.repeat(LCD_COLS-i-1);
+      lcdRender();
+      i++;
+      if (i >= padded.trimEnd().length || i >= LCD_COLS) {
+        clearInterval(lcdTyping[row]);
+        lcdTyping[row] = null;
+        lcdContent[row] = padded;
+        lcdRender();
+        resolve();
+      }
+    }, 45);
+  });
+}
+
+async function lcdShow(l1, l2, instant=false) {
+  await lcdSet(0, l1, instant);
+  await lcdSet(1, l2, instant);
+}
+
+// ══════════════════════════════════════════════════
+//  SERVO + DIAL
+// ══════════════════════════════════════════════════
+function setServo(deg) {
+  // Arm rotation: 0° = locked (pointing down), 90° = unlocked (pointing right)
+  document.getElementById('servoArm').style.transform =
+    `translate(0,-50%) rotate(${deg}deg)`;
+  // Dial arc: 0° → 188 dashoffset (empty), 90° → 0
+  const pct = deg / 90;
+  const offset = 188 - (188 * pct);
+  const arc = document.getElementById('dialArc');
+  arc.style.strokeDashoffset = offset;
+  arc.style.stroke = deg > 0 ? 'var(--green)' : 'var(--blue)';
+  // Needle: starts at -90deg (pointing left=0°), ends at 0deg (pointing up=90°)
+  const needleDeg = -90 + (deg * 1);
+  document.getElementById('dialNeedle').style.transform =
+    `translate(0,-50%) rotate(${needleDeg}deg)`;
+  document.getElementById('dialDeg').textContent = deg + '°';
+  document.getElementById('dialDeg').style.color = deg > 0 ? 'var(--green2)' : 'var(--blue2)';
+}
+
+// ══════════════════════════════════════════════════
+//  SIGNAL FLOW ANIMATOR
+// ══════════════════════════════════════════════════
+function resetFlow() {
+  for(let i=0;i<=5;i++) {
+    const s = document.getElementById('fs'+i);
+    s.className = 'flow-step';
+    if(i<5) document.getElementById('fa'+i).className='flow-arrow';
+  }
+  document.getElementById('fs0').classList.add('active');
+}
+async function animateFlow(result) {
+  // result: 'success' | 'error' | 'cancel'
+  const steps = [0,1,2,3,4,5];
+  resetFlow();
+  for(let i=0;i<steps.length;i++) {
+    await sleep(120);
+    document.getElementById('fs'+i).classList.add('active');
+    if(i<5) {
+      const arr = document.getElementById('fa'+i);
+      arr.className = 'flow-arrow active';
+    }
+  }
+  // Color final steps
+  await sleep(100);
+  const cls = result === 'success' ? 'success' : result === 'error' ? 'error' : 'active';
+  [3,4,5].forEach(i => {
+    document.getElementById('fs'+i).classList.add(cls);
+    if(i<5) document.getElementById('fa'+i).className='flow-arrow '+cls;
+  });
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+// ══════════════════════════════════════════════════
+//  LOG
+// ══════════════════════════════════════════════════
+function log(msg, type='i') {
+  const now = new Date();
+  const t = now.toTimeString().slice(0,8);
+  const box = document.getElementById('logBox');
+  const div = document.createElement('div');
+  div.className = 'log-entry';
+  div.innerHTML = `<span class="lt">${t}</span><span class="lm-${type}">— ${msg}</span>`;
+  box.insertBefore(div, box.firstChild);
+  while(box.children.length > 60) box.removeChild(box.lastChild);
+  document.getElementById('dLastEvent').textContent = msg.substring(0,35);
+}
+
+// ══════════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════════
+function updateDash() {
+  document.getElementById('dPassword').textContent = '•'.repeat(pw.length);
+  document.getElementById('dAttempts').textContent = `${fails} / ${MAX_FAIL}`;
+  const dA = document.getElementById('dAttempts');
+  dA.style.color = fails===0 ? 'var(--blue2)' : fails<MAX_FAIL ? 'var(--yellow)' : 'var(--red)';
+
+  const dSec = document.getElementById('dSecurity');
+  if(lockedOut)      { dSec.textContent='LOCKED';  dSec.style.color='var(--red)'; }
+  else if(fails>0)   { dSec.textContent='WARNING'; dSec.style.color='var(--yellow)'; }
+  else               { dSec.textContent='SECURE';  dSec.style.color='var(--green)'; }
+
+  const dD = document.getElementById('dDoor');
+  dD.textContent = doorOpen ? 'UNLOCKED' : 'LOCKED';
+  dD.style.color = doorOpen ? 'var(--green)' : 'var(--red)';
+
+  const badge = document.getElementById('headerBadge');
+  const sbadge = document.getElementById('sceneBadge');
+  if(doorOpen){
+    badge.textContent='🔓 UNLOCKED'; badge.className='pill pill-green';
+    sbadge.textContent='🔓 DOOR OPEN'; sbadge.className='scene-badge unlocked';
+  } else {
+    badge.textContent='🔒 LOCKED';   badge.className='pill pill-red';
+    sbadge.textContent='🔒 DOOR LOCKED'; sbadge.className='scene-badge locked';
+  }
+}
+
+// ══════════════════════════════════════════════════
+//  PASSWORD DISPLAY
+// ══════════════════════════════════════════════════
+function renderPW() {
+  const ph  = document.getElementById('pwPlaceholder');
+  const dots = document.getElementById('pwDots');
+  if(buf.length===0) {
+    ph.style.display=''; dots.style.display='none';
+    lcdSet(1, '>               ', true);
+  } else {
+    ph.style.display='none'; dots.style.display='flex';
+    dots.innerHTML = '';
+    for(let i=0;i<buf.length;i++) {
+      const d = document.createElement('div');
+      d.className='pw-dot';
+      dots.appendChild(d);
+    }
+    lcdSet(1, '>'+('●'.repeat(buf.length)), true);
+  }
+}
+
+// ══════════════════════════════════════════════════
+//  PARTICLES
+// ══════════════════════════════════════════════════
+function spawnParticles(x, y, color, count=16) {
+  const container = document.getElementById('particles');
+  for(let i=0;i<count;i++) {
+    const p = document.createElement('div');
+    p.className='particle';
+    const angle = (i/count)*360;
+    const dist  = 60 + Math.random()*80;
+    const tx = Math.cos(angle*Math.PI/180)*dist;
+    const ty = Math.sin(angle*Math.PI/180)*dist - 40;
+    p.style.cssText = `left:${x}px;top:${y}px;background:${color};--tx:${tx}px;--ty:${ty}px;`;
+    container.appendChild(p);
+    setTimeout(()=>p.remove(),1100);
+  }
+}
+
+// ══════════════════════════════════════════════════
+//  UNLOCK DOOR
+// ══════════════════════════════════════════════════
+async function unlockDoor() {
+  doorOpen = true;
+  fails    = 0;
+
+  // Sound
+  playSuccess();
+  playLockClick();
+
+  // Hardware effects
+  document.getElementById('shackle').classList.add('open');
+  document.getElementById('door3d').classList.add('open');
+  document.getElementById('ledGreen').className = 'led-bulb led-green-on';
+  document.getElementById('ledRed').className   = 'led-bulb led-red-off';
+  setServo(90);
+
+  // Particles
+  const doorEl = document.getElementById('door3d');
+  const r = doorEl.getBoundingClientRect();
+  spawnParticles(r.left+r.width/2, r.top+r.height/2, '#22c55e', 20);
+
+  // LCD
+  await lcdShow('ACCESS GRANTED', 'DOOR UNLOCKED  ');
+  document.getElementById('doorStatus').textContent='🔓 UNLOCKED';
+  document.getElementById('doorStatus').className='door-status unlocked';
+
+  // Dashboard
+  updateDash();
+  log('Access granted — door unlocked', 's');
+
+  // Auto-lock countdown ring
+  startAutoLockRing();
+}
+
+// ══════════════════════════════════════════════════
+//  AUTO-LOCK RING
+// ══════════════════════════════════════════════════
+function startAutoLockRing() {
+  const ring  = document.getElementById('countdownRing');
+  const fill  = document.getElementById('ringFill');
+  const label = document.getElementById('ringLabel');
+  ring.classList.add('active');
+  label.textContent = AUTO_LOCK_S;
+  fill.style.strokeDashoffset = 0;
+
+  let remaining = AUTO_LOCK_S;
+  clearTimeout(autoLockT);
+  if(lockTimer) clearInterval(lockTimer);
+
+  const perimeter = 138.2;
+  lockTimer = setInterval(() => {
+    remaining--;
+    label.textContent = remaining;
+    fill.style.strokeDashoffset = perimeter * (1 - remaining/AUTO_LOCK_S);
+    lcdSet(1, `AUTO LOCK IN ${remaining}s`, true);
+    if(remaining <= 0) {
+      clearInterval(lockTimer);
+      lockDoor();
+    }
+  }, 1000);
+}
+
+// ══════════════════════════════════════════════════
+//  LOCK DOOR
+// ══════════════════════════════════════════════════
+async function lockDoor() {
+  doorOpen = false;
+  playLockClick();
+
+  document.getElementById('countdownRing').classList.remove('active');
+  document.getElementById('door3d').classList.remove('open');
+  document.getElementById('door3d').classList.add('closing');
+  setTimeout(()=>document.getElementById('door3d').classList.remove('closing'), 900);
+  document.getElementById('shackle').classList.remove('open');
+  document.getElementById('ledGreen').className = 'led-bulb led-green-off';
+  setServo(0);
+  document.getElementById('doorStatus').textContent='🔒 LOCKED';
+  document.getElementById('doorStatus').className='door-status locked';
+
+  await lcdShow('ENTER PASSWORD', '>               ');
+  renderPW();
+  updateDash();
+  log('Door auto-locked', 'i');
+}
+
+// ══════════════════════════════════════════════════
+//  ACCESS DENIED
+// ══════════════════════════════════════════════════
+async function accessDenied() {
+  fails++;
+  playDeny();
+
+  document.getElementById('ledRed').className = 'led-bulb led-red-on';
+  document.getElementById('buzzerHw').classList.add('buzz');
+  clearTimeout(buzzerT);
+  buzzerT = setTimeout(() => {
+    document.getElementById('ledRed').className='led-bulb led-red-off';
+    document.getElementById('buzzerHw').classList.remove('buzz');
+  }, 1000);
+
+  // Shake
+  const doorEl = document.getElementById('door3d');
+  doorEl.classList.remove('shake');
+  void doorEl.offsetWidth;
+  doorEl.classList.add('shake');
+  setTimeout(()=>doorEl.classList.remove('shake'),600);
+
+  // Particles red
+  const r = doorEl.getBoundingClientRect();
+  spawnParticles(r.left+r.width/2, r.top+r.height/2, '#ef4444', 12);
+
+  await lcdShow('ACCESS DENIED', `ATTEMPT ${fails}/${MAX_FAIL}`);
+  log(`Access denied — attempt ${fails}/${MAX_FAIL}`, 'e');
+  updateDash();
+
+  if(fails >= MAX_FAIL) {
+    setTimeout(startLockout, 600);
+  } else {
+    setTimeout(async()=>{
+      if(!lockedOut) await lcdShow('ENTER PASSWORD','>');
+      renderPW();
+    }, 1500);
+  }
+}
+
+// ══════════════════════════════════════════════════
+//  LOCKOUT
+// ══════════════════════════════════════════════════
+function startLockout() {
+  lockedOut = true;
+  lockoutLeft = LOCKOUT_S;
+  setKeypad(false);
+  playAlarm();
+
+  document.getElementById('ledRed').className='led-bulb led-red-on';
+  document.getElementById('buzzerHw').classList.add('buzz');
+  document.getElementById('lockoutBar').style.display='block';
+  document.getElementById('lockoutFill').style.width='100%';
+
+  lcdShow('SYSTEM LOCKED', `TRY IN ${lockoutLeft}s`);
+  log('SYSTEM LOCKED — 3 failed attempts', 'w');
+  updateDash();
+
+  lockoutInterval = setInterval(()=>{
+    lockoutLeft--;
+    document.getElementById('lockoutFill').style.width = (lockoutLeft/LOCKOUT_S*100)+'%';
+    lcdSet(1,`TRY IN ${lockoutLeft}s  `,true);
+    if(lockoutLeft<=0) {
+      clearInterval(lockoutInterval);
+      endLockout();
+    }
+  },1000);
+}
+
+async function endLockout() {
+  lockedOut = false;
+  fails     = 0;
+  buf       = '';
+  setKeypad(true);
+  document.getElementById('ledRed').className='led-bulb led-red-off';
+  document.getElementById('buzzerHw').classList.remove('buzz');
+  document.getElementById('lockoutBar').style.display='none';
+  await lcdShow('ENTER PASSWORD','>');
+  renderPW();
+  updateDash();
+  log('Lockout ended — system ready','i');
+}
+
+// ══════════════════════════════════════════════════
+//  KEYPAD ENABLE
+// ══════════════════════════════════════════════════
+function setKeypad(on) {
+  document.querySelectorAll('.key,.btn').forEach(b=>b.disabled=!on);
+  if(!on) {
+    document.getElementById('btnReset').disabled=false;
+  }
+}
+
+// ══════════════════════════════════════════════════
+//  KEY HANDLER
+// ══════════════════════════════════════════════════
+async function handleKey(k) {
+  if(lockedOut && k!=='reset') return;
+  if(doorOpen && k!=='*') return;
+
+  playKeyClick();
+
+  // Animate flow step 0 briefly
+  document.getElementById('fs0').classList.add('active');
+
+  if(k==='#') {
+    if(!buf) return;
+    // Run flow animation
+    const correct = (buf===pw);
+    animateFlow(correct?'success':'error');
+    await sleep(300);
+    if(correct) await unlockDoor();
+    else         await accessDenied();
+    buf='';
+    renderPW();
+  } else if(k==='*') {
+    buf='';
+    renderPW();
+    lcdShow('ENTER PASSWORD','>');
+    log('Input cleared','i');
+  } else if(/^[0-9]$/.test(k)) {
+    if(buf.length<12) {
+      buf+=k;
+      renderPW();
+      // Animate key-scan flow
+      animateKeyFlow();
+    }
+  }
+}
+
+async function animateKeyFlow() {
+  resetFlow();
+  for(let i=0;i<=2;i++) {
+    await sleep(80);
+    document.getElementById('fs'+i).classList.add('active');
+    if(i<2) document.getElementById('fa'+i).className='flow-arrow active';
+  }
+}
+
+// ══════════════════════════════════════════════════
+//  KEYPAD CLICK
+// ══════════════════════════════════════════════════
+document.querySelectorAll('.key').forEach(btn => {
+  btn.addEventListener('click', e => {
+    // Ripple
+    const r = document.createElement('div');
+    r.className='ripple';
+    const rect=btn.getBoundingClientRect();
+    const size=Math.max(rect.width,rect.height);
+    r.style.cssText=`width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+    btn.appendChild(r);
+    setTimeout(()=>r.remove(),400);
+    // Press animation
+    btn.classList.add('pressed');
+    setTimeout(()=>btn.classList.remove('pressed'),120);
+    handleKey(btn.dataset.k);
+  });
+});
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if(document.getElementById('modalBg').classList.contains('show')) return;
+  if(e.key>='0'&&e.key<='9') { e.preventDefault(); handleKey(e.key); }
+  else if(e.key==='Enter'||e.key==='#') { e.preventDefault(); handleKey('#'); }
+  else if(e.key==='Backspace'||e.key==='*') { e.preventDefault(); handleKey('*'); }
+});
+
+// Buttons
+document.getElementById('btnClear').onclick   = ()=>handleKey('*');
+document.getElementById('btnSubmit').onclick  = ()=>handleKey('#');
+document.getElementById('btnReset').onclick   = async()=>{
+  if(lockoutInterval) clearInterval(lockoutInterval);
+  if(lockTimer) clearInterval(lockTimer);
+  lockedOut=false; fails=0; buf='';
+  setKeypad(true);
+  document.getElementById('buzzerHw').classList.remove('buzz');
+  document.getElementById('ledRed').className='led-bulb led-red-off';
+  document.getElementById('lockoutBar').style.display='none';
+  document.getElementById('countdownRing').classList.remove('active');
+  if(doorOpen) await lockDoor();
+  renderPW();
+  updateDash();
+  resetFlow();
+  log('System reset by user','w');
+  await lcdShow('ENTER PASSWORD','>');
+};
+document.getElementById('btnChangePw').onclick = ()=>openModal();
+
+// Sound toggle
+function toggleSound() {
+  soundOn=!soundOn;
+  document.getElementById('soundToggle').textContent=soundOn?'🔊 Sound ON':'🔇 Sound OFF';
+}
+
+// ══════════════════════════════════════════════════
+//  MODAL — CHANGE PASSWORD
+// ══════════════════════════════════════════════════
+function openModal() {
+  modalStage=1;
+  document.getElementById('mCurr').value='';
+  document.getElementById('mNew').value='';
+  document.getElementById('mConf').value='';
+  document.getElementById('mErr').textContent='';
+  document.getElementById('mS1').style.display='block';
+  document.getElementById('mS2').style.display='none';
+  document.getElementById('mS3').style.display='none';
+  document.getElementById('mNext').style.display='inline-flex';
+  document.getElementById('mCancel').textContent='Cancel';
+  document.getElementById('mStepLbl').textContent='STEP 1 — VERIFY CURRENT PASSWORD';
+  document.getElementById('modalBg').classList.add('show');
+  setTimeout(()=>document.getElementById('mCurr').focus(),120);
+}
+function closeModal() {
+  document.getElementById('modalBg').classList.remove('show');
+}
+function modalNext() {
+  const err = document.getElementById('mErr');
+  err.textContent='';
+  if(modalStage===1) {
+    if(document.getElementById('mCurr').value!==pw) {
+      err.textContent='✗ Wrong current password.'; return;
+    }
+    modalStage=2;
+    document.getElementById('mS1').style.display='none';
+    document.getElementById('mS2').style.display='block';
+    document.getElementById('mStepLbl').textContent='STEP 2 — SET NEW PASSWORD';
+    setTimeout(()=>document.getElementById('mNew').focus(),80);
+  } else if(modalStage===2) {
+    const np=document.getElementById('mNew').value;
+    const cp=document.getElementById('mConf').value;
+    if(np.length<4){err.textContent='✗ Minimum 4 characters.';return}
+    if(np!==cp){err.textContent='✗ Passwords do not match.';return}
+    pw=np;
+    localStorage.setItem('dlPW',pw);
+    modalStage=3;
+    document.getElementById('mS2').style.display='none';
+    document.getElementById('mS3').style.display='block';
+    document.getElementById('mNext').style.display='none';
+    document.getElementById('mCancel').textContent='Close';
+    document.getElementById('mStepLbl').textContent='STEP 3 — DONE!';
+    updateDash();
+    log('Password changed successfully','s');
+  }
+}
+// Close on bg click
+document.getElementById('modalBg').addEventListener('click',e=>{
+  if(e.target===document.getElementById('modalBg')) closeModal();
+});
+// Enter in modal inputs
+['mCurr','mNew','mConf'].forEach(id=>{
+  document.getElementById(id).addEventListener('keydown',e=>{
+    if(e.key==='Enter') modalNext();
+  });
+});
+
+// ══════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════
+async function init() {
+  lcdRender();
+  await lcdShow(' DOOR LOCK SYS', 'INITIALIZING...', true);
+  await sleep(800);
+  await lcdShow('ENTER PASSWORD', '>');
+  renderPW();
+  updateDash();
+  setServo(0);
+  resetFlow();
+  log('System initialized — door locked','i');
+  log(`Password loaded (${pw.length} chars)`,'i');
+}
+
+init();
+</script>
+</body>
+</html>
